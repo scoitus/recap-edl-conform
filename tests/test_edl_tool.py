@@ -148,6 +148,49 @@ class TestClassifyAndMap(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------
+# Contiguous-match merging: one caption per appearance.
+# --------------------------------------------------------------------------
+class TestMergeContiguous(unittest.TestCase):
+    def test_contiguous_matches_merge_to_one_block(self):
+        # A take split across two adjacent long events (record-contiguous)
+        # should produce ONE caption spanning the whole appearance.
+        long = [
+            _mk_event("1", "R", "A", "12:00:00:00", "12:00:02:00",
+                      "01:00:00:00", "01:00:02:00"),
+            _mk_event("2", "R", "A", "12:00:02:00", "12:00:04:00",
+                      "01:00:02:00", "01:00:04:00"),
+        ]
+        short = [_mk_event("1", "R", "A", "12:00:00:12", "12:00:03:12",
+                           "05:00:00:00", "05:00:03:00")]
+        res = match_events(short, long)
+        self.assertEqual(len(res[0].matches), 2)
+        blocks = blocks_from_matches(res)
+        self.assertEqual(len(blocks), 1)
+        self.assertEqual(
+            (frames_to_tc(blocks[0].start_f), frames_to_tc(blocks[0].end_f)),
+            ("01:00:00:12", "01:00:03:12"))
+
+    def test_separated_matches_stay_distinct(self):
+        # The same take reused at two far-apart spots must NOT merge into one
+        # caption spanning the gap.
+        long = [
+            _mk_event("1", "R", "A", "12:00:10:00", "12:00:14:00",
+                      "01:00:09:00", "01:00:13:00"),
+            _mk_event("2", "R", "A", "12:00:10:00", "12:00:14:00",
+                      "01:01:00:00", "01:01:04:00"),
+        ]
+        short = [_mk_event("1", "R", "A", "12:00:11:00", "12:00:13:00",
+                           "05:00:00:00", "05:00:02:00")]
+        res = match_events(short, long)
+        blocks = blocks_from_matches(res)
+        self.assertEqual(len(blocks), 2)
+        spans = sorted(
+            (frames_to_tc(b.start_f), frames_to_tc(b.end_f)) for b in blocks)
+        self.assertEqual(spans, [("01:00:10:00", "01:00:12:00"),
+                                 ("01:01:01:00", "01:01:03:00")])
+
+
+# --------------------------------------------------------------------------
 # Non-overlap guard.
 # --------------------------------------------------------------------------
 class TestNonOverlapGuard(unittest.TestCase):

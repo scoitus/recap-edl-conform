@@ -43,23 +43,47 @@ def build_caption_text(clip_name, short_rec_in=None, status=None, **extra):
     return text.replace("\r\n", "&a;").replace("\n", "&a;").replace("\r", "&a;")
 
 
-def blocks_from_matches(short_results):
-    """Build one CaptionBlock per matched (short, long) pair.
+def _merge_contiguous(matches):
+    """Group a short event's matches into contiguous spans.
 
-    NONE-classified short events produce no caption. A short event matching
-    several long events yields one block per match (each reuse point).
+    A take that continues across consecutive long events maps to touching /
+    overlapping record ranges; those become a single caption spanning the
+    whole appearance. A take genuinely reused at a separate spot in the long
+    sequence leaves a gap and stays a separate group. Returns a list of
+    (start_f, end_f, [long_edit#, ...]) tuples.
+    """
+    ordered = sorted(matches, key=lambda m: (m.rec_in_f, m.rec_out_f))
+    groups = []
+    for m in ordered:
+        if groups and m.rec_in_f <= groups[-1][1]:  # touching or overlapping
+            start, end, edits = groups[-1]
+            groups[-1] = (start, max(end, m.rec_out_f),
+                          edits + [m.long_event.edit_num])
+        else:
+            groups.append((m.rec_in_f, m.rec_out_f, [m.long_event.edit_num]))
+    return groups
+
+
+def blocks_from_matches(short_results):
+    """Build CaptionBlocks for matched short events.
+
+    NONE-classified short events produce no caption. Each short event yields
+    ONE caption per contiguous appearance in the long sequence: matches that
+    are contiguous (a take split across adjacent long events) merge into a
+    single block spanning their full record range, while matches at separate
+    spots in the long cut stay as separate blocks.
     """
     blocks = []
     for sr in short_results:
-        for m in sr.matches:
-            text = build_caption_text(
-                sr.short_event.from_clip_name,
-                short_rec_in=sr.short_event.rec_in,
-                status=sr.status)
+        text = build_caption_text(
+            sr.short_event.from_clip_name,
+            short_rec_in=sr.short_event.rec_in,
+            status=sr.status)
+        for start_f, end_f, edits in _merge_contiguous(sr.matches):
             blocks.append(CaptionBlock(
-                m.rec_in_f, m.rec_out_f, text,
+                start_f, end_f, text,
                 source="short#%s->long#%s" % (
-                    sr.short_event.edit_num, m.long_event.edit_num)))
+                    sr.short_event.edit_num, ",".join(edits))))
     return blocks
 
 

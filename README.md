@@ -26,7 +26,7 @@ Writes three files into `--out-dir`:
 
 | File | Contents |
 |------|----------|
-| `subcap.txt` | Avid SubCap caption file (one caption per matched cut point, source file as text). Guaranteed non-overlapping. |
+| `subcap.txt` | Avid SubCap caption file. One caption per appearance of a short clip in the long cut (`[short rec HH:MM:SS:FF] clip_name  FULL/PARTIAL`); contiguous matches are merged into a single spanning caption, separate reuse spots stay distinct. Guaranteed non-overlapping. |
 | `no_match.csv` | Short events with **no** match in the long cut (new material). |
 | `match_report.csv` | Every short event with status (FULL/PARTIAL/NONE) and, for matches, the mapped long-sequence record TC + matching long edit#. |
 
@@ -46,7 +46,8 @@ python3 main.py --long "edltest/103 long.edl" --short "edltest/103 short.edl" --
   event with the same key whose source TC range overlaps, classifies it
   **FULL / PARTIAL / NONE**, and maps the overlapping source range onto the long
   sequence's record timeline.
-- **SubCap output** (`subcap_writer.py`): builds one caption per matched pair,
+- **SubCap output** (`subcap_writer.py`): merges each short event's contiguous
+  matches into one caption per appearance (separate reuse spots stay distinct),
   then runs the **mandatory non-overlap guard** — sorts by start frame and
   truncates/drops overlaps, because Avid rejects the entire file if any two
   caption ranges overlap (A1–A4 dialogue routinely overlaps).
