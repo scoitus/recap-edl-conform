@@ -8,29 +8,69 @@ whether and where each clip in the cutdown appears in the long sequence. The
 primary output is an Avid SubCap caption file you import into the long sequence
 to visualize cut points, plus two QC reports.
 
-## Requirements
-- Python 3 (standard library only — `argparse`, `re`, `csv`).
-- EDLs exported at **23.98 fps NON-DROP** with **Source File Names comments ON**
-  (every event must carry `*SOURCE FILE:` and `*FROM CLIP NAME:`).
+## What you need
 
-> **Rate note:** Avid labels 23.98 timecode at 24 frames/sec, non-drop (frames
-> field runs 00–23). All integer frame math here uses **24 fps non-drop**. If any
-> timecode's frame field exceeds 23, the run aborts — that signals a wrong-rate
-> export.
+**To run the tool**
+- **Python 3.8 or newer.** Check with `python3 --version`.
+- No third-party packages — the tool uses only the Python standard library, so
+  there is nothing to `pip install`.
+- The double-click GUI also needs **tkinter** (ships with most Python builds; see
+  [Install](#install) if the GUI won't open). The command-line version does not
+  need tkinter.
+
+**For your EDLs**
+- Export at **23.98 fps NON-DROP**.
+- Turn **Source File Names comments ON** so every event carries a `*SOURCE FILE:`
+  and `*FROM CLIP NAME:` line. These are how clips are matched.
+
+> **Rate note:** Avid labels 23.98 timecode at 24 frames/sec, non-drop (the
+> frames field runs 00–23). All integer frame math here uses **24 fps non-drop**.
+> If any timecode's frame field exceeds 23, the run aborts — that signals a
+> wrong-rate export.
+
+## Install
+
+```bash
+git clone https://github.com/scoitus/recap-edl-conform.git
+cd recap-edl-conform
+python3 --version          # confirm Python 3.8+
+```
+
+That's it for the command line — there are no dependencies to install.
+
+**If you want the double-click GUI** and it won't open ("No module named
+`tkinter`"), install tkinter for your platform:
+
+| Platform | Command |
+|----------|---------|
+| macOS (Homebrew Python) | `brew install python-tk` |
+| Debian / Ubuntu | `sudo apt install python3-tk` |
+| Fedora | `sudo dnf install python3-tkinter` |
+| Windows / python.org installer | already included |
 
 ## Usage
 
 ### Double-click (GUI)
-Double-click **`EDL SubCap.command`** in Finder. A window opens where you browse
-for the long EDL, the short EDL, and an output folder, then click **Generate**.
-Progress and any warnings show in the window. (Needs a `python3` with tkinter;
-on Homebrew that's `brew install python-tk`.)
+- **macOS:** double-click **`EDL SubCap.command`** in Finder.
+- **Any platform:** run `python3 gui.py`.
+
+A window opens where you browse for the long EDL, the short EDL, and an output
+folder, then click **Generate**. Progress, warnings, and the output location are
+shown in the window.
+
+> macOS Gatekeeper note: the first time you double-click `EDL SubCap.command`,
+> macOS may warn it's from an unidentified developer. Right-click the file →
+> **Open** once (or go to *System Settings → Privacy & Security → Open Anyway*),
+> and it will run normally afterward. If Finder reports it isn't executable, run
+> `chmod +x "EDL SubCap.command"` once in the repo folder.
 
 ### Command line
+```bash
+python3 main.py --long path/to/long.edl --short path/to/short.edl --out-dir ./out
 ```
-python3 main.py --long "long.edl" --short "short.edl" --out-dir ./out
-```
+Quote paths that contain spaces.
 
+### Output
 Either way, three files are written into the output folder:
 
 | File | Contents |
@@ -39,10 +79,7 @@ Either way, three files are written into the output folder:
 | `no_match.csv` | Short events with **no** match in the long cut (new material). |
 | `match_report.csv` | Every short event with status (FULL/PARTIAL/NONE) and, for matches, the mapped long-sequence record TC + matching long edit#. |
 
-Example against the included samples:
-```
-python3 main.py --long "edltest/103 long.edl" --short "edltest/103 short.edl" --out-dir ./out
-```
+Import `subcap.txt` into the long sequence in Avid to see the cut points.
 
 ## How it works
 - **Parsing** (`edl_parser.py`): asserts `FCM: NON-DROP FRAME`; tokenises event
@@ -63,13 +100,14 @@ python3 main.py --long "edltest/103 long.edl" --short "edltest/103 short.edl" --
 - **Reports** (`reports.py`): the two QC CSVs.
 
 ## Tests
-```
+```bash
 python3 -m unittest discover -s tests
 ```
 Covers TC↔frame conversion (incl. the FF≤23 abort), overlap detection,
 FULL/PARTIAL/NONE classification, record-TC mapping math, the non-overlap guard,
 parser quirks, and a full integration run that validates the generated SubCap and
-asserts zero overlapping ranges. Synthetic test EDLs live in `sample_data/`.
+asserts zero overlapping ranges. Synthetic test EDLs live in `sample_data/`, so
+the suite runs without any real footage.
 
 ## Layout
 ```
