@@ -9,7 +9,6 @@ non-negotiable.
 
 from edl_parser import frames_to_tc
 
-HEADER = "@ This file written with the Avid Caption plugin, version 1."
 BEGIN = "<begin subtitles>"
 END = "<end subtitles>"
 
@@ -24,14 +23,23 @@ class CaptionBlock:
         self.source = source  # optional provenance for QC/logging
 
 
-def build_caption_text(clip_name, **extra):
+def build_caption_text(clip_name, short_rec_in=None, status=None, **extra):
     """Assemble the single-line caption text for a block.
 
-    Kept deliberately tiny and in one place so additional fields can be folded
-    in later. A SubCap caption must be ONE line; a literal line break has to be
-    escaped as `&a;`.
+    Produces e.g. `[short rec 01:00:02:00] take_07A_03  FULL`: the short
+    sequence's record in-point, the clip name, then the match status
+    (FULL/PARTIAL). Kept tiny and in one place so fields can be added later.
+    A SubCap caption must be ONE line; a literal line break has to be escaped
+    as `&a;`.
     """
-    text = clip_name if clip_name else "(no clip name)"
+    name = clip_name if clip_name else "(no clip name)"
+    parts = []
+    if short_rec_in:
+        parts.append("[short rec %s]" % short_rec_in)
+    parts.append(name)
+    if status:
+        parts.append(" %s" % status)
+    text = " ".join(parts)
     return text.replace("\r\n", "&a;").replace("\n", "&a;").replace("\r", "&a;")
 
 
@@ -44,7 +52,10 @@ def blocks_from_matches(short_results):
     blocks = []
     for sr in short_results:
         for m in sr.matches:
-            text = build_caption_text(sr.short_event.from_clip_name)
+            text = build_caption_text(
+                sr.short_event.from_clip_name,
+                short_rec_in=sr.short_event.rec_in,
+                status=sr.status)
             blocks.append(CaptionBlock(
                 m.rec_in_f, m.rec_out_f, text,
                 source="short#%s->long#%s" % (
@@ -100,7 +111,7 @@ def write_subcap(blocks, out_path, log=None):
     """
     clean = enforce_non_overlap(blocks, log=log)
 
-    lines = [HEADER, BEGIN, ""]
+    lines = [BEGIN, ""]
     for b in clean:
         lines.append("%s %s" % (frames_to_tc(b.start_f),
                                 frames_to_tc(b.end_f)))

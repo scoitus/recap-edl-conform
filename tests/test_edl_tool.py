@@ -15,7 +15,7 @@ from edl_parser import (tc_to_frames, frames_to_tc, parse_edl, EDLParseError,
                         Event, FPS)
 from matcher import (match_events, ranges_overlap, FULL, PARTIAL, NONE)
 from subcap_writer import (CaptionBlock, enforce_non_overlap, build_caption_text,
-                           blocks_from_matches, write_subcap, HEADER, BEGIN, END)
+                           blocks_from_matches, write_subcap, BEGIN, END)
 from reports import write_no_match_report, write_match_report
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -191,6 +191,18 @@ class TestCaptionText(unittest.TestCase):
     def test_plain(self):
         self.assertEqual(build_caption_text("REELA"), "REELA")
 
+    def test_full_format(self):
+        self.assertEqual(
+            build_caption_text("take_07A_03", short_rec_in="01:00:02:00",
+                               status="FULL"),
+            "[short rec 01:00:02:00] take_07A_03  FULL")
+
+    def test_partial_format(self):
+        self.assertEqual(
+            build_caption_text("SCENE_2B_B*", short_rec_in="01:00:01:00",
+                               status="PARTIAL"),
+            "[short rec 01:00:01:00] SCENE_2B_B*  PARTIAL")
+
     def test_newline_escaped(self):
         self.assertEqual(build_caption_text("a\nb"), "a&a;b")
 
@@ -293,8 +305,7 @@ def validate_subcap(path):
     frame ranges. Raises AssertionError on any violation."""
     with open(path, "r", encoding="utf-8") as fh:
         lines = fh.read().split("\n")
-    assert lines[0] == HEADER, "bad header line"
-    assert lines[1] == BEGIN, "missing <begin subtitles>"
+    assert lines[0] == BEGIN, "missing <begin subtitles>"
     assert END in lines, "missing <end subtitles>"
 
     ranges = []
