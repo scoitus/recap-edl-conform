@@ -19,10 +19,19 @@ to visualize cut points, plus two QC reports.
 > export.
 
 ## Usage
+
+### Double-click (GUI)
+Double-click **`EDL SubCap.command`** in Finder. A window opens where you browse
+for the long EDL, the short EDL, and an output folder, then click **Generate**.
+Progress and any warnings show in the window. (Needs a `python3` with tkinter;
+on Homebrew that's `brew install python-tk`.)
+
+### Command line
 ```
 python3 main.py --long "long.edl" --short "short.edl" --out-dir ./out
 ```
-Writes three files into `--out-dir`:
+
+Either way, three files are written into the output folder:
 
 | File | Contents |
 |------|----------|
@@ -64,11 +73,13 @@ asserts zero overlapping ranges. Synthetic test EDLs live in `sample_data/`.
 
 ## Layout
 ```
-edl_parser.py     EDL parsing + TC<->frame conversion
-matcher.py        source-file + TC-overlap matching, classification, mapping
-subcap_writer.py  SubCap writer incl. non-overlap guard
-reports.py        no-match and match-report CSVs
-main.py           CLI
-tests/            unit + integration tests
-sample_data/      synthetic 23.98 NDF test EDLs
+edl_parser.py        EDL parsing + TC<->frame conversion
+matcher.py           source-file + TC-overlap matching, classification, mapping
+subcap_writer.py     SubCap writer incl. non-overlap guard
+reports.py           no-match and match-report CSVs
+main.py              CLI + shared run() pipeline
+gui.py               tkinter GUI (file pickers + Generate button)
+EDL SubCap.command   double-click launcher for the GUI (macOS)
+tests/               unit + integration tests
+sample_data/         synthetic 23.98 NDF test EDLs
 ```
