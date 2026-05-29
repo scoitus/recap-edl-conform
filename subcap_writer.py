@@ -24,14 +24,14 @@ class CaptionBlock:
         self.source = source  # optional provenance for QC/logging
 
 
-def build_caption_text(source_file, **extra):
+def build_caption_text(clip_name, **extra):
     """Assemble the single-line caption text for a block.
 
     Kept deliberately tiny and in one place so additional fields can be folded
     in later. A SubCap caption must be ONE line; a literal line break has to be
     escaped as `&a;`.
     """
-    text = source_file if source_file else "(no source file)"
+    text = clip_name if clip_name else "(no clip name)"
     return text.replace("\r\n", "&a;").replace("\n", "&a;").replace("\r", "&a;")
 
 
@@ -44,7 +44,7 @@ def blocks_from_matches(short_results):
     blocks = []
     for sr in short_results:
         for m in sr.matches:
-            text = build_caption_text(sr.short_event.source_file)
+            text = build_caption_text(sr.short_event.from_clip_name)
             blocks.append(CaptionBlock(
                 m.rec_in_f, m.rec_out_f, text,
                 source="short#%s->long#%s" % (

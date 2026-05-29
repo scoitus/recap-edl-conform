@@ -195,7 +195,7 @@ class TestCaptionText(unittest.TestCase):
         self.assertEqual(build_caption_text("a\nb"), "a&a;b")
 
     def test_empty(self):
-        self.assertEqual(build_caption_text(""), "(no source file)")
+        self.assertEqual(build_caption_text(""), "(no clip name)")
 
 
 # --------------------------------------------------------------------------
