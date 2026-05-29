@@ -36,19 +36,20 @@ def write_match_report(short_results, out_path):
     rows = 0
     with open(out_path, "w", encoding="utf-8", newline="") as fh:
         w = csv.writer(fh)
-        w.writerow(["short_edit", "track", "source_file", "status",
+        w.writerow(["short_edit", "track", "source_file", "from_clip_name",
+                    "short_rec_in", "short_rec_out", "status",
                     "long_edit", "mapped_rec_in", "mapped_rec_out"])
         for sr in short_results:
             se = sr.short_event
+            short_cols = [se.edit_num, se.track, se.source_file,
+                          se.from_clip_name, se.rec_in, se.rec_out, sr.status]
             if sr.status == NONE or not sr.matches:
-                w.writerow([se.edit_num, se.track, se.source_file,
-                            sr.status, "", "", ""])
+                w.writerow(short_cols + ["", "", ""])
                 rows += 1
                 continue
             for m in sr.matches:
-                w.writerow([se.edit_num, se.track, se.source_file,
-                            sr.status, m.long_event.edit_num,
-                            frames_to_tc(m.rec_in_f),
-                            frames_to_tc(m.rec_out_f)])
+                w.writerow(short_cols + [m.long_event.edit_num,
+                                         frames_to_tc(m.rec_in_f),
+                                         frames_to_tc(m.rec_out_f)])
                 rows += 1
     return rows
