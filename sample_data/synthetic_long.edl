@@ -1,0 +1,17 @@
+TITLE:   synthetic long
+FCM: NON-DROP FRAME
+000001  REELA_FULLMATCH                                                                                                                   A     C        10:00:00:00 10:00:05:00 01:00:00:00 01:00:05:00
+*FROM CLIP NAME:  SCENE_1A_A*
+*SOURCE FILE: REELA_FULLMATCH
+000002  REELB_PARTIAL                                                                                                                     A2    C        11:00:02:00 11:00:06:00 01:00:05:00 01:00:09:00
+*FROM CLIP NAME:  SCENE_2B_B*
+*SOURCE FILE: REELB_PARTIAL
+000003  REELC_REUSED                                                                                                                      A3    C        12:00:10:00 12:00:14:00 01:00:09:00 01:00:13:00
+*FROM CLIP NAME:  SCENE_3C_C*
+*SOURCE FILE: REELC_REUSED
+000004  REELC_REUSED                                                                                                                      A3    C        12:00:10:00 12:00:14:00 01:01:00:00 01:01:04:00
+*FROM CLIP NAME:  SCENE_3C_C*
+*SOURCE FILE: REELC_REUSED
+000005  REELD_OVERLAP                                                                                                                     A     C        13:00:00:00 13:00:10:00 01:02:00:00 01:02:10:00
+*FROM CLIP NAME:  SCENE_4D_D*
+*SOURCE FILE: REELD_OVERLAP
