@@ -17,6 +17,9 @@ env/
 # Output (generated; not source)
 out/
 
+# Test EDLs (local samples, not for repo)
+edltest/
+
 # macOS
 .DS_Store
 .AppleDouble
