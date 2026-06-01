@@ -1,0 +1,57 @@
+========================================================================
+                      EDL SubCap - User Guide & Disclaimer
+========================================================================
+
+Welcome to EDL SubCap! 
+
+This tool compares two CMX3600 / File_128 EDLs exported from Avid Media 
+Composer—a long sequence and a shorter cutdown—and determines where 
+each clip in the cutdown appears in the long sequence. 
+
+It generates:
+1. A SubCap caption file (`subcap.txt`) to import into Avid to visualize 
+   cut points.
+2. A no-match CSV report (`no_match.csv`) showing new material.
+3. A match CSV report (`match_report.csv`) with mapping status details.
+
+------------------------------------------------------------------------
+⚡ CRITICAL FIRST-TIME INSTALLATION INSTRUCTIONS (macOS GATEKEEPER)
+------------------------------------------------------------------------
+Because this application is not signed with an Apple Developer Account 
+certificate, macOS will block a standard double-click launch on other 
+systems and show a security warning.
+
+To install and open the app:
+1. Drag the "EDL SubCap" app icon into the "Applications" folder shortcut.
+2. Open your "/Applications" folder in Finder.
+3. RIGHT-CLICK (or Control-Click) the "EDL SubCap" app and choose "Open".
+4. A warning window will appear. Click the "Open" button.
+
+*NOTE: You only need to perform this Right-Click -> Open sequence ONCE. 
+Afterward, you can open the app normally by double-clicking it.*
+
+------------------------------------------------------------------------
+📝 INPUT REQUIREMENTS & LIMITATIONS
+------------------------------------------------------------------------
+To ensure successful matching and avoid errors, please ensure:
+- Your EDLs must be exported at 23.98 fps NON-DROP (labeled by Avid at 
+  24 frames/sec non-drop).
+- Turn "Source File Names comments" ON during export so every event 
+  carries a "*SOURCE FILE:" or "*FROM CLIP NAME:" line. These comments 
+  are required to match clips.
+- Frame fields in timecodes must not exceed 23 (e.g. 00-23 frames). If a 
+  frame field reaches 24 or above, the program will abort to prevent 
+  wrong-rate processing.
+
+------------------------------------------------------------------------
+⚙️ SYSTEM REQUIREMENTS
+------------------------------------------------------------------------
+- macOS 11.0 or newer.
+- Apple Silicon (M1/M2/M3/M4) Macs run this application natively. 
+- Intel Macs will automatically launch the app via macOS Rosetta 2.
+- No Python installation or command-line execution is needed!
+
+========================================================================
+For more details, visit the repository:
+https://github.com/scoitus/recap-edl-conform
+========================================================================
