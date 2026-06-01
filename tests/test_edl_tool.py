@@ -252,6 +252,29 @@ class TestCaptionText(unittest.TestCase):
     def test_empty(self):
         self.assertEqual(build_caption_text(""), "(no clip name)")
 
+    def test_track_prefix(self):
+        self.assertEqual(
+            build_caption_text("take_07A_03", short_rec_in="01:00:02:00",
+                               status="FULL", track="A1"),
+            "[A1] [short rec 01:00:02:00] take_07A_03  FULL")
+
+    def test_source_file_fallback(self):
+        self.assertEqual(
+            build_caption_text("", source_file="reel.mov"), "reel.mov")
+
+
+# --------------------------------------------------------------------------
+# CLI run() input validation.
+# --------------------------------------------------------------------------
+class TestRunValidation(unittest.TestCase):
+    def test_missing_input_raises(self):
+        from main import run
+        short = os.path.join(SAMPLE, "synthetic_short.edl")
+        out = tempfile.mkdtemp()
+        self.addCleanup(lambda: __import__("shutil").rmtree(out, ignore_errors=True))
+        with self.assertRaises(EDLParseError):
+            run("/no/such/long.edl", short, out, log=lambda *a: None)
+
 
 # --------------------------------------------------------------------------
 # Parser quirks against the real Avid format.

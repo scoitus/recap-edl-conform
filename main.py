@@ -23,13 +23,22 @@ def run(long_path, short_path, out_dir, log=print):
     """Run the full pipeline. `log` receives human-readable progress lines.
 
     Returns a dict of output paths and counts on success. Raises EDLParseError
-    if either EDL is the wrong rate / malformed.
+    if an input is missing or either EDL is the wrong rate / malformed.
     """
+    for label, p in (("Long", long_path), ("Short", short_path)):
+        if not os.path.isfile(p):
+            raise EDLParseError("%s EDL not found: %s" % (label, p))
+
     long_res = parse_edl(long_path)
     short_res = parse_edl(short_path)
 
     _report_parse(long_path, long_res, log)
     _report_parse(short_path, short_res, log)
+
+    if not long_res.events:
+        log("  WARN: LONG EDL parsed to 0 events; output will be empty.")
+    if not short_res.events:
+        log("  WARN: SHORT EDL parsed to 0 events; nothing to match.")
 
     short_results = match_events(short_res.events, long_res.events)
 

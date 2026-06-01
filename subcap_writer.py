@@ -23,17 +23,20 @@ class CaptionBlock:
         self.source = source  # optional provenance for QC/logging
 
 
-def build_caption_text(clip_name, short_rec_in=None, status=None, **extra):
+def build_caption_text(clip_name, source_file=None, short_rec_in=None,
+                       status=None, track=None, **extra):
     """Assemble the single-line caption text for a block.
 
-    Produces e.g. `[short rec 01:00:02:00] take_07A_03  FULL`: the short
-    sequence's record in-point, the clip name, then the match status
-    (FULL/PARTIAL). Kept tiny and in one place so fields can be added later.
-    A SubCap caption must be ONE line; a literal line break has to be escaped
-    as `&a;`.
+    Produces e.g. `[A1] [short rec 01:00:02:00] take_07A_03  FULL`: the track,
+    the short sequence's record in-point, the clip name, then the match status
+    (FULL/PARTIAL). The name falls back to the Source File when FROM CLIP NAME
+    is absent. Kept tiny and in one place so fields can be added later. A SubCap
+    caption must be ONE line; a literal line break has to be escaped as `&a;`.
     """
-    name = clip_name if clip_name else "(no clip name)"
+    name = clip_name or source_file or "(no clip name)"
     parts = []
+    if track:
+        parts.append("[%s]" % track)
     if short_rec_in:
         parts.append("[short rec %s]" % short_rec_in)
     parts.append(name)
@@ -77,13 +80,16 @@ def blocks_from_matches(short_results):
     for sr in short_results:
         text = build_caption_text(
             sr.short_event.from_clip_name,
+            source_file=sr.short_event.source_file,
             short_rec_in=sr.short_event.rec_in,
-            status=sr.status)
+            status=sr.status,
+            track=sr.short_event.track)
         for start_f, end_f, edits in _merge_contiguous(sr.matches):
             blocks.append(CaptionBlock(
                 start_f, end_f, text,
-                source="short#%s->long#%s" % (
-                    sr.short_event.edit_num, ",".join(edits))))
+                source="short#%s [%s] ->long#%s" % (
+                    sr.short_event.edit_num, sr.short_event.track,
+                    ",".join(edits))))
     return blocks
 
 
@@ -120,6 +126,11 @@ def enforce_non_overlap(blocks, log=None):
                         % (prev.source, frames_to_tc(prev.start_f)))
                     result.pop()
                     dropped += 1
+                else:
+                    log.append(
+                        "Truncated caption %s to end %s (overlap with next "
+                        "start %s)" % (prev.source, frames_to_tc(prev.end_f),
+                                       frames_to_tc(block.start_f)))
         result.append(block)
 
     log.append("Non-overlap guard: %d overlaps resolved, %d frames truncated, "
