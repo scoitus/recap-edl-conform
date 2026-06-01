@@ -27,7 +27,8 @@ def build_caption_text(clip_name, source_file=None, short_rec_in=None,
                        status=None, track=None, **extra):
     """Assemble the single-line caption text for a block.
 
-    Produces e.g. `[A1] [short rec 01:00:02:00] take_07A_03  FULL`: the track,
+    Produces e.g. `[A1/V] [short rec 01:00:02:00] take_07A_03  FULL`: the
+    LONG-sequence track(s) the clip lands on (multiple are joined with `/`),
     the short sequence's record in-point, the clip name, then the match status
     (FULL/PARTIAL). The name falls back to the Source File when FROM CLIP NAME
     is absent. Kept tiny and in one place so fields can be added later. A SubCap
@@ -51,19 +52,22 @@ def _merge_contiguous(matches):
 
     A take that continues across consecutive long events maps to touching /
     overlapping record ranges; those become a single caption spanning the
-    whole appearance. A take genuinely reused at a separate spot in the long
-    sequence leaves a gap and stays a separate group. Returns a list of
-    (start_f, end_f, [long_edit#, ...]) tuples.
+    whole appearance. This also collapses a clip that lives on several long
+    tracks at the same record position (e.g. V + A1) into one group, so the
+    caption can list every track the appearance touches. A take genuinely
+    reused at a separate spot in the long sequence leaves a gap and stays a
+    separate group. Returns a list of (start_f, end_f, [long_event, ...])
+    tuples, where the long_event list carries every long edit in the group.
     """
     ordered = sorted(matches, key=lambda m: (m.rec_in_f, m.rec_out_f))
     groups = []
     for m in ordered:
         if groups and m.rec_in_f <= groups[-1][1]:  # touching or overlapping
-            start, end, edits = groups[-1]
+            start, end, evs = groups[-1]
             groups[-1] = (start, max(end, m.rec_out_f),
-                          edits + [m.long_event.edit_num])
+                          evs + [m.long_event])
         else:
-            groups.append((m.rec_in_f, m.rec_out_f, [m.long_event.edit_num]))
+            groups.append((m.rec_in_f, m.rec_out_f, [m.long_event]))
     return groups
 
 
@@ -78,18 +82,23 @@ def blocks_from_matches(short_results):
     """
     blocks = []
     for sr in short_results:
-        text = build_caption_text(
-            sr.short_event.from_clip_name,
-            source_file=sr.short_event.source_file,
-            short_rec_in=sr.short_event.rec_in,
-            status=sr.status,
-            track=sr.short_event.track)
-        for start_f, end_f, edits in _merge_contiguous(sr.matches):
+        for start_f, end_f, long_events in _merge_contiguous(sr.matches):
+            edits = [le.edit_num for le in long_events]
+            # The LONG-sequence track(s) this appearance lands on. A clip cut
+            # to several tracks (V + A1 + A2) collapses into one group, so we
+            # list every distinct track it touches.
+            tracks = sorted({le.track for le in long_events if le.track})
+            track_label = "/".join(tracks)
+            text = build_caption_text(
+                sr.short_event.from_clip_name,
+                source_file=sr.short_event.source_file,
+                short_rec_in=sr.short_event.rec_in,
+                status=sr.status,
+                track=track_label)
             blocks.append(CaptionBlock(
                 start_f, end_f, text,
-                source="short#%s [%s] ->long#%s" % (
-                    sr.short_event.edit_num, sr.short_event.track,
-                    ",".join(edits))))
+                source="short#%s ->long#%s [%s]" % (
+                    sr.short_event.edit_num, ",".join(edits), track_label)))
     return blocks
 
 

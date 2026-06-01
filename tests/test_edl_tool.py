@@ -170,6 +170,23 @@ class TestMergeContiguous(unittest.TestCase):
             (frames_to_tc(blocks[0].start_f), frames_to_tc(blocks[0].end_f)),
             ("01:00:00:12", "01:00:03:12"))
 
+    def test_multitrack_long_appearance_lists_tracks(self):
+        # A clip living on two long tracks (V + A1) at the same record
+        # position collapses into ONE caption that lists both tracks.
+        long = [
+            _mk_event("1", "R", "V", "12:00:00:00", "12:00:04:00",
+                      "01:00:00:00", "01:00:04:00"),
+            _mk_event("2", "R", "A1", "12:00:00:00", "12:00:04:00",
+                      "01:00:00:00", "01:00:04:00"),
+        ]
+        short = [_mk_event("1", "R", "V", "12:00:01:00", "12:00:03:00",
+                           "05:00:00:00", "05:00:02:00")]
+        res = match_events(short, long)
+        self.assertEqual(len(res[0].matches), 2)
+        blocks = blocks_from_matches(res)
+        self.assertEqual(len(blocks), 1)
+        self.assertIn("[A1/V]", blocks[0].text)
+
     def test_separated_matches_stay_distinct(self):
         # The same take reused at two far-apart spots must NOT merge into one
         # caption spanning the gap.
